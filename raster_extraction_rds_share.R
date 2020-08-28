@@ -233,16 +233,36 @@ c <- data.frame(raster::extract(all_covariates,
                                 AFRO.map.5km,
                                 method = "bilinear"))
 
+c <- cbind(coord.5km, c)
+
+cont.cov <- coord.5km
+
 # rename fields
-c <- c %>% rename(time_HF = AccessMod_Travel_Time_1410209, 
-                  pr_imp_housing2015 = housing_proj,
+c <- c %>% rename(pr_imp_housing2015 = housing_proj,
                   pr_u5_stunting2015 = stunting_CLIP,
                   pr_u5_wasting2015 = wasting_CLIP,
                   inc_pf_clinical_2017 = X2019_pf_2017,
-                  pr_all_anemia_2018 = all_anemia_2018,
                   pr_HIV_2017 = IHME_AFRICA_HIV)
 
 setwd(path_outputs)
 
 saveRDS(c, file = "contextual_covariates.rds")
 write.csv(c, "contextual_covariates_matrix.csv", row.names = F)
+
+## Read the matrix with the predictors
+setwd(path_outputs)
+covariates <- readRDS("contextual_covariates.rds")
+PCS <- raster.5km@crs
+
+## Generate a raster stack object with the predictors
+Covs <- stack()
+for(i in 3:length(covariates)){
+  raster1 <- rasterFromXYZ(covariates[,c(1,2,i)],
+                           crs = PCS)
+  Covs <- stack(Covs, raster1)
+}
+
+# check the rasters
+names(Covs)
+# plot(Covs)
+is.factor(Covs)
